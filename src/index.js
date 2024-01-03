@@ -1,3 +1,6 @@
+// const OPENWEATHER_API_KEY = "32542c149071351abe4519b6b8467242";
+// const OPENWEATHER_API_URL = "https://api.openweathermap.org/data/2.5";
+
 const searchFormElement = document.querySelector("#search-form");
 const loadingSpinner = document.getElementById("loading-spinner");
 
@@ -21,13 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-searchFormElement.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  const searchInput = document.querySelector("#search-input").value;
-  if (searchInput) {
-    await searchCity(`q=${searchInput}`);
-  }
-});
+searchFormElement.addEventListener("submit", handleSearchSubmit);
 
 async function searchCity(query) {
   showLoading(true);
@@ -79,9 +76,12 @@ function updateElement(elementId, content) {
 }
 
 function showLoading(isLoading) {
-  loadingSpinner.style.display = isLoading ? "block" : "none";
+  if (loadingSpinner) {
+    loadingSpinner.style.display = isLoading ? "block" : "none";
+  } else {
+    console.error("Loading spinner element not found.");
+  }
 }
-
 function formatDate(date) {
   const options = {
     weekday: "long",

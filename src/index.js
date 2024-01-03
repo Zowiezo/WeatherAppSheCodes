@@ -1,5 +1,5 @@
-// const OPENWEATHER_API_KEY = "32542c149071351abe4519b6b8467242";
-// const OPENWEATHER_API_URL = "https://api.openweathermap.org/data/2.5";
+const OPENWEATHER_API_KEY = "32542c149071351abe4519b6b8467242";
+const OPENWEATHER_API_URL = "https://api.openweathermap.org/data/2.5";
 
 const searchFormElement = document.querySelector("#search-form");
 const loadingSpinner = document.getElementById("loading-spinner");
@@ -43,9 +43,14 @@ async function searchCity(query) {
 }
 
 async function getCityNameByCoords(latitude, longitude) {
-  const reverseGeocodingUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${OPENWEATHER_API_KEY}`;
-  const response = await axios.get(reverseGeocodingUrl);
-  return response.data[0]?.name || "Unknown";
+  try {
+    const reverseGeocodingUrl = `${OPENWEATHER_API_URL}/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+    const response = await axios.get(reverseGeocodingUrl);
+    return response.data[0]?.name || "Unknown";
+  } catch (error) {
+    console.error("Error fetching city name:", error);
+    return "Unknown";
+  }
 }
 
 function refreshWeather(data) {
@@ -72,7 +77,12 @@ function refreshWeather(data) {
 }
 
 function updateElement(elementId, content) {
-  document.querySelector(elementId).innerHTML = content;
+  const element = document.querySelector(elementId);
+  if (element) {
+    element.innerHTML = content;
+  } else {
+    console.error(`Element with id ${elementId} not found.`);
+  }
 }
 
 function showLoading(isLoading) {
@@ -82,6 +92,7 @@ function showLoading(isLoading) {
     console.error("Loading spinner element not found.");
   }
 }
+
 function formatDate(date) {
   const options = {
     weekday: "long",

@@ -60,15 +60,17 @@ main {
   font-weight: 900;
   margin: 0;
 }
+
+.current-details strong.humidity,
+.current-details strong.wind {
+  color: #f65282;
+}
+
 .current-details {
   color: rgba(39, 33, 66, 0.4);
   font-size: 16px;
   font-weight: 400;
   line-height: 24px;
-}
-
-.current-details strong {
-  color: #f65282;
 }
 
 .current-temperature-icon {
@@ -87,6 +89,36 @@ main {
   font-size: 28px;
   position: relative;
   top: -38px;
+}
+
+.forecast-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.forecast-day {
+  margin-top: 20px;
+  padding: 10px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.forecast-date {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.forecast-temperatures {
+  text-align: center;
+  color: #f65282;
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.forecast-temperature {
+  padding: 0 15px;
 }
 
 footer {

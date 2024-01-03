@@ -9,29 +9,30 @@ document.addEventListener("DOMContentLoaded", () => {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        try {
-          const { latitude, longitude } = position.coords;
-          const city = await getCityNameByCoords(latitude, longitude);
-          searchCity(`q=${city}`);
-        } catch (error) {
-          console.error("Error getting city name by coordinates:", error);
-          showLoading(false);
-        }
+        const { latitude, longitude } = position.coords;
+        const city = await getCityNameByCoords(latitude, longitude);
+        searchCity(`q=${city}`);
       },
       (error) => {
         console.error("Error getting user location:", error);
         // Handle error, maybe default to a specific city
-        showLoading(false);
       }
     );
   } else {
     console.error("Geolocation not supported");
     // Handle geolocation not supported
-    showLoading(false);
   }
 });
 
 searchFormElement.addEventListener("submit", handleSearchSubmit);
+
+async function handleSearchSubmit(event) {
+  event.preventDefault();
+  const searchInput = document.querySelector("#search-input").value;
+  if (searchInput) {
+    await searchCity(`q=${searchInput}`);
+  }
+}
 
 async function searchCity(query) {
   showLoading(true);
@@ -43,6 +44,13 @@ async function searchCity(query) {
     const currentWeatherData = response.data;
 
     refreshWeather(currentWeatherData);
+
+    // Fetch 5-day forecast
+    const forecastUrl = `${OPENWEATHER_API_URL}/forecast?${query}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+    const forecastResponse = await axios.get(forecastUrl);
+    const forecastData = forecastResponse.data;
+
+    displayForecast(forecastData);
   } catch (error) {
     console.error("Error fetching data:", error);
     showLoading(false);
@@ -50,14 +58,16 @@ async function searchCity(query) {
 }
 
 async function getCityNameByCoords(latitude, longitude) {
+  const reverseGeocodingUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${OPENWEATHER_API_KEY}`;
+
   try {
-    const reverseGeocodingUrl = `${OPENWEATHER_API_URL}/geo/1.0/reverse?lat=${latitude}&lon=${longitude}&limit=1&appid=${OPENWEATHER_API_KEY}`;
     const response = await axios.get(reverseGeocodingUrl);
-    return response.data[0]?.name || "Unknown";
+    const city = response.data[0]?.name || "Unknown";
+    return city;
   } catch (error) {
     console.error("Error fetching city name:", error);
     // Handle error, maybe return a default city
-    return "Unknown";
+    return "DefaultCity";
   }
 }
 
@@ -73,9 +83,15 @@ function refreshWeather(data) {
   updateElement("#current-city", city);
   updateElement("#current-date", formatDate(new Date(time * 1000)));
   updateElement("#current-description", description);
-  updateElement("#current-humidity", `Humidity: ${humidity}%`);
-  updateElement("#current-wind", `Wind Speed: ${speed} m/s`);
-  updateElement("#current-temperature", `Temperature: ${Math.round(temp)}°C`);
+
+  // Add classes to style humidity and wind differently
+  updateElement(
+    "#current-humidity",
+    `<span class="humidity">${humidity}%</span>`
+  );
+  updateElement("#current-wind", `<span class="wind">${speed} m/s</span>`);
+
+  updateElement("#current-temperature", `${Math.round(temp)}°C`);
   updateElement(
     "#current-icon",
     `<img src="http://openweathermap.org/img/wn/${icon}.png" alt="Weather Icon" />`
@@ -84,13 +100,46 @@ function refreshWeather(data) {
   showLoading(false);
 }
 
-function updateElement(elementId, content) {
-  const element = document.querySelector(elementId);
-  if (element) {
-    element.innerHTML = content;
-  } else {
-    console.error(`Element with id ${elementId} not found.`);
+function displayForecast(data) {
+  const forecastElement = document.getElementById("forecast");
+  forecastElement.innerHTML = ""; // Clear previous forecast data
+
+  const forecastList = data.list;
+
+  // Display the forecast for the next 5 days
+  for (let i = 0; i < forecastList.length; i += 8) {
+    const forecast = forecastList[i];
+    const {
+      dt,
+      main: { temp_min, temp_max },
+      weather: [{ icon }],
+    } = forecast;
+
+    const forecastDate = new Date(dt * 1000);
+    const dayOfWeek = forecastDate.toLocaleDateString("en-US", {
+      weekday: "short",
+    });
+
+    const forecastHtml = `
+        <div class="forecast-day">
+          <div class="forecast-date">${dayOfWeek}</div>
+          <img src="http://openweathermap.org/img/wn/${icon}.png" alt="Forecast Icon" />
+          <div class="forecast-temperatures">
+          <div class="forecast-temperature">
+            <strong>${Math.round(temp_max)}°C</strong> ${Math.round(temp_min)}°C
+          </div>
+          </div>
+        </div>
+      `;
+
+    forecastElement.innerHTML += forecastHtml;
   }
+
+  showLoading(false);
+}
+
+function updateElement(elementId, content) {
+  document.querySelector(elementId).innerHTML = content;
 }
 
 function showLoading(isLoading) {

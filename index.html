@@ -10,7 +10,7 @@
       rel="stylesheet"
     />
     <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
-    <link rel="stylesheet" href="src/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
     <title>My Weather Application</title>
   </head>
   <body>
@@ -34,8 +34,10 @@
             <p class="current-details">
               <span id="current-date"></span>
               <span id="current-description"></span><br />
-              Humidity: <strong id="current-humidity"></strong>, Wind:
-              <strong id="current-wind"></strong>
+              <span>Humidity:</span>
+              <strong id="current-humidity" class="humidity"></strong>
+              <span>Wind:</span>
+              <strong id="current-wind" class="wind"></strong>
             </p>
           </div>
           <div class="current-temperature">
@@ -44,9 +46,10 @@
               class="current-temperature-value"
               id="current-temperature"
             ></span>
-            <span class="current-temperature-unit">°C</span>
+            <span class="current-temperature-unit"></span>
           </div>
         </div>
+        <div id="forecast" class="forecast-container"></div>
       </main>
       <footer>
         <p>
@@ -66,6 +69,6 @@
         </p>
       </footer>
     </div>
-    <script src="src/index.js"></script>
+    <script src="index.js"></script>
   </body>
 </html>

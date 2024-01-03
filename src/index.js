@@ -1,33 +1,86 @@
-function displayTemperature(city, temperature) {
-  document.querySelector("#current-city").innerHTML = city;
-  document.querySelector("#current-temperature").innerHTML =
-    Math.round(temperature);
+// API Constants
+const SHECODES_API_KEY = "3tfa81d976oc0653bcbabb4fe03a6e27";
+const SHECODES_WEATHER_API_URL = "https://api.shecodes.io/weather/v1";
+
+// DOM Elements
+const cityElement = document.querySelector("#city");
+const timeElement = document.querySelector("#time");
+const descriptionElement = document.querySelector("#description");
+const humidityElement = document.querySelector("#humidity");
+const windSpeedElement = document.querySelector("#wind-speed");
+const temperatureElement = document.querySelector("#temperature");
+const iconElement = document.querySelector("#icon");
+const searchFormElement = document.querySelector("#search-form");
+
+// Event Listener for Form Submission
+searchFormElement.addEventListener("submit", handleSearchSubmit);
+
+// Function to handle form submission
+function handleSearchSubmit(event) {
+  event.preventDefault();
+  const searchInput = document.querySelector("#search-form-input").value;
+  if (searchInput) {
+    searchCity(searchInput);
+  }
 }
 
-function search(event) {
-  event.preventDefault();
-  const searchInputElement = document.querySelector("#search-input");
-  const city = searchInputElement.value;
-
-  const apiKey = "3tfa81d976oc0653bcbabb4fe03a6e27";
-  const apiUrl = `https://api.shecodes.io/weather/v1/current?query=${city}&key=${apiKey}&units=metric`;
+// Function to search for city weather
+function searchCity(city) {
+  const apiUrl = `${SHECODES_WEATHER_API_URL}/current?query=${city}&key=${SHECODES_API_KEY}&units=metric`;
+  showLoading(true);
 
   axios
     .get(apiUrl)
     .then((response) => {
-      const { city, temperature } = response.data;
-      displayTemperature(city, temperature.current);
+      refreshWeather(response.data);
     })
     .catch((error) => {
       console.error("Error fetching data:", error);
+      showLoading(false);
     });
 }
 
+// Function to refresh weather information on the page
+function refreshWeather(data) {
+  const {
+    city,
+    time,
+    condition: { description, icon_url },
+    temperature: { current },
+    humidity,
+    wind: { speed },
+  } = data;
+
+  updateElement("#city", city);
+  updateElement("#time", formatDate(new Date(time * 1000)));
+  updateElement("#description", description);
+  updateElement("#humidity", `Humidity: ${humidity}%`);
+  updateElement("#wind-speed", `Wind Speed: ${speed} km/h`);
+  updateElement("#temperature", `Temperature: ${Math.round(current)}°C`);
+  updateElement("#icon", `<img src="${icon_url}" class="weather-app-icon" />`);
+
+  showLoading(false);
+}
+
+// Function to update HTML element content
+function updateElement(elementId, content) {
+  document.querySelector(elementId).innerHTML = content;
+}
+
+// Function to show/hide loading indicator
+function showLoading(isLoading) {
+  const loadingSpinner = document.getElementById("loading-spinner");
+  if (isLoading) {
+    loadingSpinner.style.display = "block";
+  } else {
+    loadingSpinner.style.display = "none";
+  }
+}
+
+// Function to format date
 function formatDate(date) {
   const minutes = date.getMinutes().toString().padStart(2, "0");
-  const hours = date.getHours().toString().padStart(2, "0");
-  const day = date.getDay();
-
+  const hours = date.getHours();
   const days = [
     "Sunday",
     "Monday",
@@ -37,14 +90,7 @@ function formatDate(date) {
     "Friday",
     "Saturday",
   ];
+  const day = days[date.getDay()];
 
-  const formattedDay = days[day];
-  return `${formattedDay} ${hours}:${minutes}`;
+  return `${day} ${hours}:${minutes}`;
 }
-
-const searchForm = document.querySelector("#search-form");
-searchForm.addEventListener("submit", search);
-
-const currentDateElement = document.querySelector("#current-date");
-const currentDate = new Date();
-currentDateElement.innerHTML = formatDate(currentDate);

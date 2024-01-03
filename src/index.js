@@ -1,29 +1,45 @@
+const OPENWEATHER_API_KEY = "32542c149071351abe4519b6b8467242";
+const OPENWEATHER_API_URL = "https://api.openweathermap.org/data/2.5";
 const searchFormElement = document.querySelector("#search-form");
 const loadingSpinner = document.getElementById("loading-spinner");
 
-searchFormElement.addEventListener("submit", handleSearchSubmit);
+document.addEventListener("DOMContentLoaded", () => {
+  searchFormElement.addEventListener("submit", handleSearchSubmit);
 
-function handleSearchSubmit(event) {
-  event.preventDefault();
-  const searchInput = document.querySelector("#search-form-input").value;
-  if (searchInput) {
-    searchCity(searchInput);
+  // Fetch weather for the user's current location
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const city = `lat=${latitude}&lon=${longitude}`;
+        searchCity(city);
+      },
+      (error) => {
+        console.error("Error getting user location:", error);
+        // Handle error, maybe default to a specific city
+        searchCity("Paris"); // Default to Paris if geolocation fails
+      }
+    );
+  } else {
+    console.error("Geolocation not supported");
+    // Handle geolocation not supported
+    searchCity("Paris"); // Default to Paris if geolocation is not supported
   }
-}
+});
 
 async function searchCity(city) {
   showLoading(true);
 
   try {
     // Fetch current weather data
-    const currentWeatherUrl = `${OPENWEATHER_API_URL}/weather?q=${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+    const currentWeatherUrl = `${OPENWEATHER_API_URL}/weather?${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
     const response = await axios.get(currentWeatherUrl);
     const currentWeatherData = response.data;
 
     refreshWeather(currentWeatherData);
 
     // Fetch 5-day forecast
-    const forecastUrl = `${OPENWEATHER_API_URL}/forecast?q=${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+    const forecastUrl = `${OPENWEATHER_API_URL}/forecast?${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
     const forecastResponse = await axios.get(forecastUrl);
     const forecastData = forecastResponse.data;
 
@@ -31,6 +47,14 @@ async function searchCity(city) {
   } catch (error) {
     console.error("Error fetching data:", error);
     showLoading(false);
+  }
+}
+
+function handleSearchSubmit(event) {
+  event.preventDefault();
+  const searchInput = document.querySelector("#search-form-input").value;
+  if (searchInput) {
+    searchCity(`q=${searchInput}`);
   }
 }
 
@@ -43,14 +67,14 @@ function refreshWeather(data) {
     wind: { speed },
   } = data;
 
-  updateElement("#city", city);
-  updateElement("#time", formatDate(new Date(time * 1000)));
-  updateElement("#description", description);
-  updateElement("#humidity", `Humidity: ${humidity}%`);
-  updateElement("#wind-speed", `Wind Speed: ${speed} m/s`);
-  updateElement("#temperature", `Temperature: ${Math.round(temp)}°C`);
+  updateElement("#current-city", city);
+  updateElement("#current-date", formatDate(new Date(time * 1000)));
+  updateElement("#current-description", description);
+  updateElement("#current-humidity", `Humidity: ${humidity}%`);
+  updateElement("#current-wind", `Wind Speed: ${speed} m/s`);
+  updateElement("#current-temperature", `${Math.round(temp)}°C`);
   updateElement(
-    "#icon",
+    "#current-icon",
     `<img src="http://openweathermap.org/img/wn/${icon}.png" alt="Weather Icon" />`
   );
 
@@ -67,9 +91,9 @@ function displayForecast(data) {
   // Group forecast data by date
   forecastList.forEach((forecast) => {
     const date = new Date(forecast.dt * 1000);
-    const day = `${date.getFullYear()}-${
-      date.getMonth() + 1
-    }-${date.getDate()}`;
+    const day = `${date.getFullYear()}-${(date.getMonth() + 1)
+      .toString()
+      .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
 
     if (!forecastDays[day]) {
       forecastDays[day] = [];
@@ -88,18 +112,14 @@ function displayForecast(data) {
     } = firstForecast;
 
     const forecastHtml = `
-                    <div class="forecast-day">
-                        <div class="forecast-date">${formatDate(
-                          new Date(dt * 1000)
-                        )}</div>
-                        <div class="forecast-temperature">
-                            <strong>${Math.round(
-                              temp_max
-                            )}°C</strong> / ${Math.round(temp_min)}°C
-                        </div>
-                        <img src="http://openweathermap.org/img/wn/${icon}.png" alt="Forecast Icon" />
-                    </div>
-                `;
+      <div class="forecast-day">
+        <div class="forecast-date">${formatDate(new Date(dt * 1000))}</div>
+        <div class="forecast-temperature">
+          <strong>${Math.round(temp_max)}°C</strong> / ${Math.round(temp_min)}°C
+        </div>
+        <img src="http://openweathermap.org/img/wn/${icon}.png" alt="Forecast Icon" />
+      </div>
+    `;
 
     forecastElement.innerHTML += forecastHtml;
   }

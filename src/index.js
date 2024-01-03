@@ -9,18 +9,25 @@ document.addEventListener("DOMContentLoaded", () => {
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const { latitude, longitude } = position.coords;
-        const city = await getCityNameByCoords(latitude, longitude);
-        searchCity(`q=${city}`);
+        try {
+          const { latitude, longitude } = position.coords;
+          const city = await getCityNameByCoords(latitude, longitude);
+          searchCity(`q=${city}`);
+        } catch (error) {
+          console.error("Error getting city name by coordinates:", error);
+          showLoading(false);
+        }
       },
       (error) => {
         console.error("Error getting user location:", error);
         // Handle error, maybe default to a specific city
+        showLoading(false);
       }
     );
   } else {
     console.error("Geolocation not supported");
     // Handle geolocation not supported
+    showLoading(false);
   }
 });
 
@@ -49,6 +56,7 @@ async function getCityNameByCoords(latitude, longitude) {
     return response.data[0]?.name || "Unknown";
   } catch (error) {
     console.error("Error fetching city name:", error);
+    // Handle error, maybe return a default city
     return "Unknown";
   }
 }

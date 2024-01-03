@@ -11,7 +11,7 @@
     />
     <script src="https://cdn.jsdelivr.net/npm/axios@1.1.2/dist/axios.min.js"></script>
     <link rel="stylesheet" href="src/styles.css" />
-    <title>My weather application</title>
+    <title>My Weather Application</title>
   </head>
   <body>
     <div class="weather-app">
@@ -32,15 +32,18 @@
           <div>
             <h1 class="current-city" id="current-city">Paris</h1>
             <p class="current-details">
-              <span id="current-date"></span>, moderate rain <br />
-              Humidity: <strong>87%</strong>, Wind: <strong>7.2km/h</strong>
+              <span id="current-date"></span>,
+              <span id="current-description">moderate rain</span><br />
+              Humidity: <strong id="current-humidity">87%</strong>, Wind:
+              <strong id="current-wind">7.2km/h</strong>
             </p>
           </div>
           <div class="current-temperature">
-            <span class="current-temperature-icon">☀️</span
-            ><span class="current-temperature-value" id="current-temperature"
+            <span class="current-temperature-icon" id="current-icon">☀️</span>
+            <span class="current-temperature-value" id="current-temperature"
               >24</span
-            ><span class="current-temperature-unit">°C</span>
+            >
+            <span class="current-temperature-unit">°C</span>
           </div>
         </div>
       </main>
@@ -51,8 +54,7 @@
           <a
             href="https://github.com/Zowiezo/WeatherAppSheCodes"
             target="_blank"
-          >
-            on GitHub</a
+            >on GitHub</a
           >
           and
           <a
@@ -63,6 +65,7 @@
         </p>
       </footer>
     </div>
+    <script src="src/env.js"></script>
+    <script src="src/index.js"></script>
   </body>
-  <script src="src/index.js"></script>
 </html>

@@ -1,21 +1,8 @@
-// API Constants
-const SHECODES_API_KEY = "3tfa81d976oc0653bcbabb4fe03a6e27";
-const SHECODES_WEATHER_API_URL = "https://api.shecodes.io/weather/v1";
-
-// DOM Elements
-const cityElement = document.querySelector("#city");
-const timeElement = document.querySelector("#time");
-const descriptionElement = document.querySelector("#description");
-const humidityElement = document.querySelector("#humidity");
-const windSpeedElement = document.querySelector("#wind-speed");
-const temperatureElement = document.querySelector("#temperature");
-const iconElement = document.querySelector("#icon");
 const searchFormElement = document.querySelector("#search-form");
+const loadingSpinner = document.getElementById("loading-spinner");
 
-// Event Listener for Form Submission
 searchFormElement.addEventListener("submit", handleSearchSubmit);
 
-// Function to handle form submission
 function handleSearchSubmit(event) {
   event.preventDefault();
   const searchInput = document.querySelector("#search-form-input").value;
@@ -24,30 +11,35 @@ function handleSearchSubmit(event) {
   }
 }
 
-// Function to search for city weather
-function searchCity(city) {
-  const apiUrl = `${SHECODES_WEATHER_API_URL}/current?query=${city}&key=${SHECODES_API_KEY}&units=metric`;
+async function searchCity(city) {
   showLoading(true);
 
-  axios
-    .get(apiUrl)
-    .then((response) => {
-      refreshWeather(response.data);
-    })
-    .catch((error) => {
-      console.error("Error fetching data:", error);
-      showLoading(false);
-    });
+  try {
+    // Fetch current weather data
+    const currentWeatherUrl = `${OPENWEATHER_API_URL}/weather?q=${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+    const response = await axios.get(currentWeatherUrl);
+    const currentWeatherData = response.data;
+
+    refreshWeather(currentWeatherData);
+
+    // Fetch 5-day forecast
+    const forecastUrl = `${OPENWEATHER_API_URL}/forecast?q=${city}&appid=${OPENWEATHER_API_KEY}&units=metric`;
+    const forecastResponse = await axios.get(forecastUrl);
+    const forecastData = forecastResponse.data;
+
+    displayForecast(forecastData);
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    showLoading(false);
+  }
 }
 
-// Function to refresh weather information on the page
 function refreshWeather(data) {
   const {
-    city,
-    time,
-    condition: { description, icon_url },
-    temperature: { current },
-    humidity,
+    name: city,
+    dt: time,
+    weather: [{ description, icon }],
+    main: { humidity, temp },
     wind: { speed },
   } = data;
 
@@ -55,42 +47,80 @@ function refreshWeather(data) {
   updateElement("#time", formatDate(new Date(time * 1000)));
   updateElement("#description", description);
   updateElement("#humidity", `Humidity: ${humidity}%`);
-  updateElement("#wind-speed", `Wind Speed: ${speed} km/h`);
-  updateElement("#temperature", `Temperature: ${Math.round(current)}°C`);
-  updateElement("#icon", `<img src="${icon_url}" class="weather-app-icon" />`);
+  updateElement("#wind-speed", `Wind Speed: ${speed} m/s`);
+  updateElement("#temperature", `Temperature: ${Math.round(temp)}°C`);
+  updateElement(
+    "#icon",
+    `<img src="http://openweathermap.org/img/wn/${icon}.png" alt="Weather Icon" />`
+  );
 
   showLoading(false);
 }
 
-// Function to update HTML element content
+function displayForecast(data) {
+  const forecastElement = document.getElementById("forecast");
+  forecastElement.innerHTML = ""; // Clear previous forecast data
+
+  const forecastList = data.list;
+  const forecastDays = {};
+
+  // Group forecast data by date
+  forecastList.forEach((forecast) => {
+    const date = new Date(forecast.dt * 1000);
+    const day = `${date.getFullYear()}-${
+      date.getMonth() + 1
+    }-${date.getDate()}`;
+
+    if (!forecastDays[day]) {
+      forecastDays[day] = [];
+    }
+
+    forecastDays[day].push(forecast);
+  });
+
+  // Display the first forecast entry for each day
+  for (const day in forecastDays) {
+    const firstForecast = forecastDays[day][0];
+    const {
+      dt,
+      main: { temp_min, temp_max },
+      weather: [{ icon }],
+    } = firstForecast;
+
+    const forecastHtml = `
+                    <div class="forecast-day">
+                        <div class="forecast-date">${formatDate(
+                          new Date(dt * 1000)
+                        )}</div>
+                        <div class="forecast-temperature">
+                            <strong>${Math.round(
+                              temp_max
+                            )}°C</strong> / ${Math.round(temp_min)}°C
+                        </div>
+                        <img src="http://openweathermap.org/img/wn/${icon}.png" alt="Forecast Icon" />
+                    </div>
+                `;
+
+    forecastElement.innerHTML += forecastHtml;
+  }
+}
+
 function updateElement(elementId, content) {
   document.querySelector(elementId).innerHTML = content;
 }
 
-// Function to show/hide loading indicator
 function showLoading(isLoading) {
-  const loadingSpinner = document.getElementById("loading-spinner");
-  if (isLoading) {
-    loadingSpinner.style.display = "block";
-  } else {
-    loadingSpinner.style.display = "none";
-  }
+  loadingSpinner.style.display = isLoading ? "block" : "none";
 }
 
-// Function to format date
 function formatDate(date) {
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const hours = date.getHours();
-  const days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
-  const day = days[date.getDay()];
-
-  return `${day} ${hours}:${minutes}`;
+  const options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+  };
+  return date.toLocaleDateString("en-US", options);
 }
